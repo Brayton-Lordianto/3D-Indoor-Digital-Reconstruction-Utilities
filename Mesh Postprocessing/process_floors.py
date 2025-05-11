@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy 
 from scipy.spatial import Delaunay
+import tqdm
 
 # Simple Gaussian filter 
 def gaussian_filter1d(input_array, sigma=2, truncate=4.0):
@@ -76,14 +77,14 @@ def find_peaks(x, height=None, threshold=None, distance=None):
     
     return peak_indices
 
-def plot_histogram(bins, hist):
+def plot_histogram(bins, hist, title):
     plt.plot(bins[:-1], hist, label='Original Histogram')
     plt.xlabel('Y values')
     plt.ylabel('Frequency')
     plt.title('Original Histogram of Y values')
     plt.legend()
-    plt.show()
-    plt.savefig('original_histogram.png')
+    # plt.show()
+    plt.savefig(title + ".png")
     plt.clf() 
 
 # Pseudocode for floor detection
@@ -91,11 +92,11 @@ def detect_floor(vertices):
     # histogram of y-values with appropriate bin size
     y_values = [v[1] for v in vertices]  # Assuming y is up
     hist, bins = np.histogram(y_values, bins=100)
-    plot_histogram(bins, hist)
+    plot_histogram(bins, hist, "Original_Histogram")
 
     # Smoothing the histogram
     smoothed_hist = gaussian_filter1d(hist)
-    plot_histogram(bins, smoothed_hist)
+    plot_histogram(bins, smoothed_hist, "Smoothed_Histogram")
     
     # find floor, which is the first peak (as they are sorted)
     peaks = find_peaks(smoothed_hist, height=np.max(smoothed_hist)*0.3)
@@ -139,10 +140,12 @@ def fill_mesh_holes(vertices, faces, colors=None):
     remaining_edges = set(boundary_edges)
     
     # find all holes, which include all boundary vertices 
-    while remaining_edges:
+    for edge in tqdm.tqdm(list(remaining_edges), desc="Finding holes"):
+        if edge not in remaining_edges:
+            continue  # Skip edges that have already been processed
         # Start a new hole loop
-        current_hole = [] # vertex indices
-        edge = remaining_edges.pop()
+        current_hole = []  # vertex indices
+        remaining_edges.remove(edge)
         start_vertex = edge[0]
         current_vertex = edge[1]
         current_hole.append(start_vertex)
@@ -165,10 +168,9 @@ def fill_mesh_holes(vertices, faces, colors=None):
                 break
         if len(current_hole) >= 3:  
             holes.append(current_hole)
-    
     # Fill each hole
     new_faces = []
-    for hole in holes:
+    for hole in tqdm.tqdm(holes):
         # Get coordinates of hole vertices
         hole_vertices = np.array([vertices[i] for i in hole])
         centroid = np.mean(hole_vertices, axis=0)

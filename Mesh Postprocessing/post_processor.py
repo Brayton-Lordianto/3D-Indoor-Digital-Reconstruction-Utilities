@@ -6,8 +6,8 @@ import polyscope as ps
 import trimesh
 import argparse
 import process_floors
+
 ps.init()
-ps
 
 def register_mesh(v, f, n, c, title="Mesh"):
     # Register the mesh with Polyscope
@@ -47,17 +47,17 @@ if __name__ == "__main__":
     # CLEAR ARTIFACTS
     print("Removing floating artifacts...")
     f = get_max_connected_component(f)
-    register_mesh(v, f, n, c, "Removed Floating Artifacts")
+    register_mesh(v, f, n, c, "Removed Floating Artifacts from Raw Mesh")
     
     # REMOVE DIPPING FLOORS 
     print("Removing dipping floors...")
     v, f = process_floors.process_floors(v, f)
-    register_mesh(v, f, n, c, "Removed Dipping Floors")
+    register_mesh(v, f, n, c, "Removed Dipping Floors after Removing Floating Artifacts")
     
     # HOLE FILLING
     print("Filling holes...")
     f = process_floors.fill_mesh_holes(v, f)
-    register_mesh(v, f, n, c, "Filled Holes")
+    register_mesh(v, f, n, c, "Filled Holes After Removing Dipping Floors")
     
     # SAVE MESH
     if args.save:
