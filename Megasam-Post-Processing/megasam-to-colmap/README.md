@@ -1,3 +1,5 @@
+# CREDITS TO YUE HUANG FOR THIS DIRECTORY
+
 # Format converting
 modifying file formats to make MegaSaM output runs on 2DGS
 
