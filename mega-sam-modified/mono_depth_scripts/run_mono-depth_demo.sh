@@ -16,11 +16,11 @@
 
 
 evalset=(
-  swing
-  breakdance-flare
+  fronts_all
 )
 
-DATA_DIR=/home/zhengqili/filestore/DAVIS/DAVIS/JPEGImages/480p
+DATA_DIR=/home/mayliu/cory_images
+#/home/zhengqili/filestore/DAVIS/DAVIS/JPEGImages/480p
 
 # Run DepthAnything
 for seq in ${evalset[@]}; do

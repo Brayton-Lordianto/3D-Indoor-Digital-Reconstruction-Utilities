@@ -121,6 +121,10 @@ def consistency_loss(
   flows_step = flows.permute(0, 2, 3, 1)
   flow_masks_step = flow_masks.permute(0, 2, 3, 1).squeeze(-1)
 
+#   print(f"[DEBUG] cam_c2w.shape: {cam_c2w.shape}")
+#   print(f"[DEBUG] jj: {jj}")
+#   print(f"[DEBUG] jj.max(): {jj.max()}, cam_c2w.shape[0]: {cam_c2w.shape[0]}")
+
   cam_1to2 = torch.bmm(
       torch.linalg.inv(torch.index_select(cam_c2w, dim=0, index=jj)),
       torch.index_select(cam_c2w, dim=0, index=ii),
@@ -194,18 +198,58 @@ def consistency_loss(
   init_disp_ds = init_disp[:, None, ...]
   K_rescale = KK.clone()
   K_inv_rescale = torch.inverse(K_rescale)
-  pred_normal = compute_normals[0](
-      1.0 / torch.clamp(disp_data_ds, 1e-3, 1e3), K_inv_rescale[None]
-  )
-  init_normal = compute_normals[0](
-      1.0 / torch.clamp(init_disp_ds, 1e-3, 1e3), K_inv_rescale[None]
-  )
+  
+  def compute_normals_batched(disp_tensor, normal_fn, K_inv, batch_size=32):
+    normals = []
+    for i in range(0, disp_tensor.shape[0], batch_size):
+        disp_chunk = disp_tensor[i:i + batch_size]
+        normal_chunk = normal_fn(
+            1.0 / torch.clamp(disp_chunk, 1e-3, 1e3),
+            K_inv[None]
+        )
+        normals.append(normal_chunk)
+    return torch.cat(normals, dim=0)
+
+# Batched computation of pred_normal and init_normal
+  pred_normal = compute_normals_batched(disp_data_ds, compute_normals[0], K_inv_rescale)
+  init_normal = compute_normals_batched(init_disp_ds, compute_normals[0], K_inv_rescale)
+
+#   pred_normal = compute_normals[0](
+#       1.0 / torch.clamp(disp_data_ds, 1e-3, 1e3), K_inv_rescale[None]
+#   )
+#   init_normal = compute_normals[0](
+#       1.0 / torch.clamp(init_disp_ds, 1e-3, 1e3), K_inv_rescale[None]
+#   )
 
   loss_normal = torch.mean(
       fg_alpha * (1.0 - torch.sum(pred_normal * init_normal, dim=1))
   )  # / (1e-8 + torch.sum(fg_alpha))
 
+#   loss_grad = 0.0
+#   for scale in range(4):
+#     interval = 2**scale
+#     disp_data_ds = torch.nn.functional.interpolate(
+#         disp_data[:, None, ...],
+#         scale_factor=(1.0 / interval, 1.0 / interval),
+#         mode="nearest-exact",
+#     )
+#     init_disp_ds = torch.nn.functional.interpolate(
+#         init_disp[:, None, ...],
+#         scale_factor=(1.0 / interval, 1.0 / interval),
+#         mode="nearest-exact",
+#     )
+#     uncertainty_rs = torch.nn.functional.interpolate(
+#         uncertainty,
+#         scale_factor=(1.0 / interval, 1.0 / interval),
+#         mode="nearest-exact",
+#     )
+#     loss_grad += gradient_loss(
+#         torch.log(disp_data_ds), torch.log(init_disp_ds), uncertainty_rs
+#     )
+
   loss_grad = 0.0
+  batch_size = 32  # or reduce to 16 if still getting OOM
+
   for scale in range(4):
     interval = 2**scale
     disp_data_ds = torch.nn.functional.interpolate(
@@ -223,9 +267,14 @@ def consistency_loss(
         scale_factor=(1.0 / interval, 1.0 / interval),
         mode="nearest-exact",
     )
-    loss_grad += gradient_loss(
-        torch.log(disp_data_ds), torch.log(init_disp_ds), uncertainty_rs
-    )
+
+    for i in range(0, disp_data_ds.shape[0], batch_size):
+        pred_chunk = torch.log(disp_data_ds[i:i + batch_size])
+        gt_chunk = torch.log(init_disp_ds[i:i + batch_size])
+        unc_chunk = uncertainty_rs[i:i + batch_size]
+
+        loss_grad += gradient_loss(gt_chunk, pred_chunk, unc_chunk)
+
 
   return (
       w_ratio * loss_d_ratio
@@ -294,6 +343,15 @@ if __name__ == "__main__":
   ii = iijj[0, ...].long()
   jj = iijj[1, ...].long()
   K = torch.from_numpy(K).float().cuda()
+
+  # Filter out invalid indices that would crash index_select
+  max_valid_idx = poses.shape[0]  # this is before SE3 conversion, still on CPU
+  valid_mask = jj < max_valid_idx
+  ii = ii[valid_mask]
+  jj = jj[valid_mask]
+
+  flows = flows[valid_mask]
+  flow_masks = flow_masks[valid_mask]
 
   init_disp = torch.from_numpy(disp_data).float().cuda()
   disp_data = torch.from_numpy(disp_data).float().cuda()

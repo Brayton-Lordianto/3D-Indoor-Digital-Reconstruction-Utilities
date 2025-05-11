@@ -35,10 +35,13 @@ import os
 import glob
 import argparse
 from lietorch import SE3
+import re
 
 import torch.nn.functional as F
 from droid import Droid
 
+import torch
+torch.cuda.empty_cache()
 
 def image_stream(
     image_list,
@@ -199,8 +202,54 @@ if __name__ == "__main__":
   rgb_list = []
   senor_depth_list = []
 
-  image_list = sorted(glob.glob(os.path.join("%s" % (args.datapath), "*.jpg")))
-  image_list += sorted(glob.glob(os.path.join("%s" % (args.datapath), "*.png")))
+#   image_list = sorted(glob.glob(os.path.join(args.datapath, "*.png")))
+#   image_list = [f for f in image_list if any(view in os.path.basename(f) for view in ["front", "back", "left", "right"])]
+
+  # image_list = sorted(glob.glob(os.path.join("%s" % (args.datapath), "*.jpg")))
+  image_list = sorted(glob.glob(os.path.join("%s" % (args.datapath), "*.png")))
+
+  # all_pngs = sorted(glob.glob(os.path.join(os.path.abspath(args.datapath), "*.png")))
+  # image_list = [f for f in all_pngs if re.match(r"^\d+_front\.png$", os.path.basename(f))]
+
+  # def extract_key(filepath):
+  #   basename = os.path.basename(filepath)
+  #   match = re.match(r"(\d+)_front\.png", basename)
+  #   if match:
+  #       return int(match.group(1))
+  #   else:
+  #       return float('inf')
+
+  # image_list = sorted(image_list, key=extract_key)
+
+  print(f"[DEBUG] Selected {len(image_list)} *_front.png images")
+
+  if len(image_list) == 0:
+    raise ValueError(f"[ERROR] No *_front.png images found in {args.datapath}")
+
+
+  # if not os.path.exists(args.datapath):
+  #   raise FileNotFoundError(f"[ERROR] The given --datapath does not exist: {args.datapath}")
+
+  # image_list = sorted(glob.glob(os.path.abspath(os.path.join(args.datapath, "*.png"))))
+  # image_list = [f for f in image_list if any(view in os.path.basename(f) for view in ["front", "back", "left", "right"])]
+
+  # def extract_key(filepath):
+  #   basename = os.path.basename(filepath)
+  #   match = re.match(r"(\d+)_([a-z]+)", basename)
+  #   if match:
+  #       return (int(match.group(1)), match.group(2))
+  #   else:
+  #       return (float("inf"), basename)
+
+  # image_list = sorted(image_list, key=extract_key)
+  # image_list = image_list[:400]
+
+  # print(f"[DEBUG] Found {len(image_list)} images in {args.datapath}")
+  # for f in image_list:
+  #   print(f"[DEBUG] {f}")
+  # if len(image_list) == 0:
+  #   raise ValueError(f"[ERROR] No PNG images found in {args.datapath}")
+
 
   # NOTE Mono is inverse depth, but metric-depth is depth!
   mono_disp_paths = sorted(
@@ -213,6 +262,12 @@ if __name__ == "__main__":
           os.path.join("%s/%s" % (args.metric_depth_path, scene_name), "*.npz")
       )
   )
+  
+  
+  # mono_disp_paths = mono_disp_paths[:400]
+  # metric_depth_paths = metric_depth_paths[:400]
+  print(f"[DEBUG] mono_disp_paths {len(mono_disp_paths)}")
+  print(f"[DEBUG] metric_depth_paths {len(metric_depth_paths)}")
 
   img_0 = cv2.imread(image_list[0])
   scales = []

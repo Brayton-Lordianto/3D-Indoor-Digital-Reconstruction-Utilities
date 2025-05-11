@@ -14,14 +14,20 @@
 # limitations under the License.
 # ==============================================================================
 
-DATA_PATH=/home/zhengqili/filestore/DAVIS/DAVIS/JPEGImages/480p
+# DATA_PATH=/home/mayliu/mega-sam/DAVIS
+# /home/zhengqili/filestore/DAVIS/DAVIS/JPEGImages/480p
 CKPT_PATH=checkpoints/megasam_final.pth
 
+# evalset=(
+#    swing
+#    breakdance-flare
+# )
 evalset=(
-   swing
-   breakdance-flare
+  fronts_all
+  # cory_block0_images
 )
 
+DATA_PATH=/home/mayliu/cory_images
 
 for seq in ${evalset[@]}; do
     CUDA_VISIBLE_DEVICE=0 python camera_tracking_scripts/test_demo.py \

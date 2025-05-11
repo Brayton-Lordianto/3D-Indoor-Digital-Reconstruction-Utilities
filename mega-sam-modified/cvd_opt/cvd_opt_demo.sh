@@ -15,12 +15,19 @@
 # ==============================================================================
 
 
+# evalset=(
+#   swing
+#   breakdance-flare
+# )
+
 evalset=(
-  swing
-  breakdance-flare
+  fronts_all
+  # cory_block0_images
 )
 
-DATA_PATH=/home/zhengqili/filestore/DAVIS/DAVIS/JPEGImages/480p
+DATA_PATH=/home/mayliu/cory_images
+# /home/mayliu/mega-sam/DAVIS
+# /home/zhengqili/filestore/DAVIS/DAVIS/JPEGImages/480p
 
 
 # Run Raft Optical Flows
