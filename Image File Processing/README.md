@@ -1,0 +1,1 @@
+These files were used to inpaint images, and then used to move around numbers of images around betweeen folders. MegaSaM and Mast3R do not use the full set of images, but only a subset of them, and these files were used to create the subset of images.
