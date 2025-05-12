@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 def megasam_to_nerfstudio(npz_path, output_dir, image_dir="images"):
-     data = np.load(npz_path)
+    data = np.load(npz_path)
     images = data["images"]         # (T, H, W, 3)
     depths = data["depths"]         # (T, H, W)
     poses = data["cam_c2w"]         # (T, 4, 4)
