@@ -30,6 +30,15 @@ video {
   margin-bottom: 30px;
 }
 
+.video-section img {
+  width: 100%;        /* or use a fixed width like 600px */
+  max-width: 800px;   /* prevent it from getting too large */
+  height: auto;       /* maintain aspect ratio */
+  display: block;
+  margin: 20px auto;
+}
+
+
 footer {
   text-align: center;
   padding: 15px;
