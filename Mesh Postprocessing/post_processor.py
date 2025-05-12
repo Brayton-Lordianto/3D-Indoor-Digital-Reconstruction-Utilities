@@ -35,11 +35,17 @@ def get_max_connected_component(surface_f):
 
 if __name__ == "__main__":
     # GET MESH
-    parser = argparse.ArgumentParser(description="Process a mesh file.")
-    parser.add_argument("--f", type=str, help="Path to the mesh file")
-    parser.add_argument("--save", nargs='?', const="processed_mesh.obj", type=str, help="Path to save the processed mesh. If no path is provided, defaults to 'processed_mesh.obj'")
-    args = parser.parse_args()
-    filename = args.f
+    try:
+        parser = argparse.ArgumentParser(description="Process a mesh file.")
+        parser.add_argument("--f", type=str, help="Path to the mesh file")
+        parser.add_argument("--save", nargs='?', const="processed_mesh.obj", type=str, help="Path to save the processed mesh. If no path is provided, defaults to 'processed_mesh.obj'")
+        args = parser.parse_args()
+        if not args.f:
+            raise ValueError("Mesh file path (--f) is required.")
+        filename = args.f
+    except Exception as e:
+        print(f"Error: {e}")
+        exit(1)
     print("Loading mesh from:", filename)
     v, f, n, c = load_mesh_with_attributes(filename)
     register_mesh(v, f, n, c)
